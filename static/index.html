@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Сириус.Аренда — бронирование пространств</title>
+<style>
+  :root {
+    --navy: #16233f;
+    --navy-light: #24365c;
+    --gold: #e0a53c;
+    --gold-dark: #c98f27;
+    --bg: #f4f6fa;
+    --card: #ffffff;
+    --border: #e1e6ef;
+    --text: #1a2233;
+    --muted: #667085;
+    --ok-bg: #e7f7ee;
+    --ok-text: #16743f;
+    --err-bg: #fdecec;
+    --err-text: #b3261e;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", -apple-system, Roboto, Arial, sans-serif;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.45;
+  }
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: #fff;
+    padding: 28px 20px 34px;
+  }
+  header .wrap { max-width: 880px; margin: 0 auto; }
+  header h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: -0.02em; }
+  header p { margin: 0; color: #cbd5e8; font-size: 14px; }
+
+  main { max-width: 880px; margin: -18px auto 60px; padding: 0 20px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 2px rgba(20, 30, 60, 0.04);
+  }
+  .step-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: #3a2a05;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .step-hint { margin: 0 0 16px; color: var(--muted); font-size: 13px; }
+
+  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 5px; color: #33405c; }
+  input, select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    color: var(--text);
+    font-family: inherit;
+  }
+  input:focus, select:focus { outline: 2px solid var(--gold); outline-offset: 1px; border-color: var(--gold-dark); }
+
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 160px; }
+
+  button {
+    margin-top: 16px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: var(--navy);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button:hover { background: var(--navy-light); }
+  button.primary { background: var(--gold); color: #3a2a05; }
+  button.primary:hover { background: var(--gold-dark); }
+  button.ghost { background: transparent; color: var(--navy); border: 1px solid var(--border); }
+  button.ghost:hover { background: #eef1f7; }
+  button.danger { background: #fff; color: var(--err-text); border: 1px solid #f3c9c6; margin-top: 0; padding: 6px 12px; font-size: 13px; }
+  button.danger:hover { background: var(--err-bg); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 4px; }
+  .tab-btn { flex: 1; padding: 9px; border-radius: 8px; border: 1px solid var(--border); background: #f7f8fb; color: var(--muted); cursor: pointer; font-weight: 600; font-size: 14px; margin-top: 0; }
+  .tab-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+  .msg { padding: 10px 12px; border-radius: 8px; margin-top: 12px; font-size: 13px; display: none; }
+  .msg.ok { background: var(--ok-bg); color: var(--ok-text); display: block; }
+  .msg.err { background: var(--err-bg); color: var(--err-text); display: block; }
+
+  .account-status { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .account-status .who { font-size: 14px; }
+  .account-status .who b { color: var(--navy); }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; background: var(--ok-bg); color: var(--ok-text); font-size: 12px; font-weight: 600; }
+
+  .room-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .room-card .info b { font-size: 15px; }
+  .room-card .info .meta { color: var(--muted); font-size: 13px; margin-top: 3px; }
+  .room-card .badge { display: inline-block; background: #eef1f7; color: #33405c; border-radius: 6px; padding: 2px 8px; font-size: 12px; margin: 2px 4px 0 0; }
+
+  .booking-row {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .booking-row .info b { font-size: 14px; }
+  .booking-row .info .meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .status-active { color: var(--ok-text); font-weight: 600; }
+  .status-cancelled { color: var(--muted); font-weight: 600; text-decoration: line-through; }
+
+  .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+  .locked { opacity: 0.55; pointer-events: none; }
+  .fine-print { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+  details.new-room { margin-top: 16px; }
+  details.new-room summary { cursor: pointer; font-size: 13px; color: var(--navy); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Сириус.Аренда</h1>
+    <p>Бронирование переговорных комнат и учебных пространств университета «Сириус»</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- ШАГ 1: АККАУНТ -->
+  <section class="card" id="account-card">
+    <p class="step-title"><span class="step-num">1</span> Войдите или зарегистрируйтесь</p>
+    <p class="step-hint">Аккаунт нужен, чтобы бронировать пространства и видеть свои брони.</p>
+
+    <div id="logged-out-block">
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Войти</button>
+        <button class="tab-btn" id="tab-register" onclick="switchTab('register')">Зарегистрироваться</button>
+      </div>
+      <label>Имя пользователя</label>
+      <input id="auth-username" placeholder="например, ivan" autocomplete="username">
+      <label>Пароль</label>
+      <input id="auth-password" type="password" placeholder="минимум 6 символов" autocomplete="current-password">
+      <button class="primary" id="auth-submit" onclick="submitAuth()">Войти</button>
+      <div class="msg" id="auth-msg"></div>
+    </div>
+
+    <div id="logged-in-block" style="display:none;">
+      <div class="account-status">
+        <div class="who">Вы вошли как <b id="current-username"></b> <span class="pill">в сети</span></div>
+        <button class="ghost" onclick="logout()">Выйти</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ШАГ 2: НАЙТИ СВОБОДНОЕ ПРОСТРАНСТВО -->
+  <section class="card">
+    <p class="step-title"><span class="step-num">2</span> Найдите свободное пространство</p>
+    <p class="step-hint">Укажите, когда вам нужна комната — покажем только те, что свободны в это время. Можно оставить поле пустым, чтобы просто посмотреть все пространства.</p>
+
+    <div class="row">
+      <div>
+        <label>Дата и время начала</label>
+        <input type="datetime-local" id="search-start">
+      </div>
+      <div>
+        <label>Дата и время окончания</label>
+        <input type="datetime-local" id="search-end">
+      </div>
+      <div>
+        <label>Минимум человек (необязательно)</label>
+        <input type="number" id="search-capacity" min="1" placeholder="например, 5">
+      </div>
+    </div>
+    <button class="primary" onclick="searchRooms()">Показать свободные</button>
+    <button class="ghost" onclick="showAllRooms()">Показать все пространства</button>
+    <div class="msg" id="search-msg"></div>
+
+    <div id="rooms-list" style="margin-top:16px;">Загрузка…</div>
+
+    <details class="new-room">
+      <summary>+ Добавить новое пространство</summary>
+      <div class="row">
+        <div>
+          <label>Название</label>
+          <input id="room-name" placeholder="Переговорная 101">
+        </div>
+        <div>
+          <label>Вместимость (человек)</label>
+          <input id="room-capacity" type="number" min="1" placeholder="6">
+        </div>
+        <div>
+          <label>Оборудование (через запятую)</label>
+          <input id="room-equipment" placeholder="проектор, доска">
+        </div>
+      </div>
+      <button onclick="createRoom()">Создать пространство</button>
+      <div class="msg" id="room-msg"></div>
+    </details>
+  </section>
+
+  <!-- ШАГ 3: ЗАБРОНИРОВАТЬ -->
+  <section class="card" id="booking-card">
+    <p class="step-title"><span class="step-num">3</span> Забронируйте</p>
+    <p class="step-hint">Выберите пространство из списка ниже и подтвердите бронь.</p>
+
+    <label>Пространство</label>
+    <select id="b-room"><option value="">— сначала найдите пространства выше —</option></select>
+
+    <div class="row">
+      <div>
+        <label>Начало</label>
+        <input type="datetime-local" id="b-start">
+      </div>
+      <div>
+        <label>Окончание</label>
+        <input type="datetime-local" id="b-end">
+      </div>
+    </div>
+
+    <label>Имя для брони (кто бронирует)</label>
+    <input id="b-username" placeholder="например, Иван Иванов">
+
+    <button class="primary" onclick="createBooking()">Забронировать</button>
+    <div class="msg" id="booking-msg"></div>
+    <p class="fine-print">Если пространство уже занято на выбранное время, система сообщит об этом и не даст создать пересекающуюся бронь.</p>
+  </section>
+
+  <!-- ШАГ 4: МОИ БРОНИ -->
+  <section class="card">
+    <p class="step-title"><span class="step-num">4</span> Мои брони</p>
+    <p class="step-hint">Здесь видны только ваши бронирования. Отменить чужую бронь нельзя.</p>
+    <div id="my-bookings">Войдите в аккаунт, чтобы увидеть свои брони.</div>
+  </section>
+
+</main>
+
+<script>
+const API = "";
+let token = localStorage.getItem("sirius_token") || null;
+let currentUsername = localStorage.getItem("sirius_username") || null;
+let authMode = "login";
+let allRooms = [];
+
+function showMsg(id, text, ok) {
+  const el = document.getElementById(id);
+  el.className = "msg " + (ok ? "ok" : "err");
+  el.textContent = text;
+  el.style.display = "block";
+}
+function hideMsg(id) {
+  const el = document.getElementById(id);
+  el.style.display = "none";
+}
+
+// ---------- Аккаунт ----------
+
+function switchTab(mode) {
+  authMode = mode;
+  document.getElementById("tab-login").classList.toggle("active", mode === "login");
+  document.getElementById("tab-register").classList.toggle("active", mode === "register");
+  document.getElementById("auth-submit").textContent = mode === "login" ? "Войти" : "Зарегистрироваться";
+  hideMsg("auth-msg");
+}
+
+function updateAccountUI() {
+  const loggedIn = !!token;
+  document.getElementById("logged-out-block").style.display = loggedIn ? "none" : "block";
+  document.getElementById("logged-in-block").style.display = loggedIn ? "block" : "none";
+  document.getElementById("current-username").textContent = currentUsername || "";
+  document.getElementById("booking-card").classList.toggle("locked", !loggedIn);
+  if (loggedIn) {
+    document.getElementById("b-username").value = currentUsername;
+    loadMyBookings();
+  } else {
+    document.getElementById("my-bookings").innerHTML = "Войдите в аккаунт, чтобы увидеть свои брони.";
+  }
+}
+
+async function submitAuth() {
+  const username = document.getElementById("auth-username").value.trim();
+  const password = document.getElementById("auth-password").value;
+  if (!username || !password) {
+    showMsg("auth-msg", "Заполните имя пользователя и пароль", false);
+    return;
+  }
+  if (authMode === "register") {
+    const res = await fetch(API + "/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+    if (res.ok) {
+      showMsg("auth-msg", "Готово! Теперь войдите под этим же логином и паролем.", true);
+      switchTab("login");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showMsg("auth-msg", data.detail || "Не получилось зарегистрироваться. Возможно, пароль слишком короткий (нужно от 6 символов) или это имя уже занято.", false);
+    }
+    return;
+  }
+  // login
+  const form = new URLSearchParams();
+  form.set("username", username);
+  form.set("password", password);
+  const res = await fetch(API + "/auth/login", { method: "POST", body: form });
+  if (res.ok) {
+    const data = await res.json();
+    token = data.access_token;
+    currentUsername = username;
+    localStorage.setItem("sirius_token", token);
+    localStorage.setItem("sirius_username", username);
+    hideMsg("auth-msg");
+    updateAccountUI();
+  } else {
+    showMsg("auth-msg", "Неверное имя пользователя или пароль.", false);
+  }
+}
+
+function logout() {
+  token = null;
+  currentUsername = null;
+  localStorage.removeItem("sirius_token");
+  localStorage.removeItem("sirius_username");
+  updateAccountUI();
+}
+
+// ---------- Пространства ----------
+
+function toLocalInputValue(iso) {
+  return iso; // already in datetime-local compatible format when we build the search
+}
+
+function renderRooms(rooms, targetId) {
+  const list = document.getElementById(targetId);
+  if (!rooms.length) {
+    list.innerHTML = '<p class="empty">Ничего не найдено. Попробуйте изменить время или создайте новое пространство ниже.</p>';
+    return;
+  }
+  list.innerHTML = rooms.map(r => `
+    <div class="room-card">
+      <div class="info">
+        <b>${r.name}</b>
+        <div class="meta">Вместимость: до ${r.capacity} чел.</div>
+        <div>${(r.equipment || []).map(e => `<span class="badge">${e}</span>`).join("") || '<span class="meta">без доп. оборудования</span>'}</div>
+      </div>
+      <button onclick="selectRoomForBooking(${r.id})">Забронировать это</button>
+    </div>
+  `).join("");
+}
+
+function fillRoomSelect(rooms) {
+  const select = document.getElementById("b-room");
+  if (!rooms.length) {
+    select.innerHTML = '<option value="">— нет доступных пространств —</option>';
+    return;
+  }
+  select.innerHTML = rooms.map(r => `<option value="${r.id}">${r.name} (до ${r.capacity} чел.)</option>`).join("");
+}
+
+function selectRoomForBooking(roomId) {
+  document.getElementById("b-room").value = roomId;
+  document.getElementById("booking-card").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function showAllRooms() {
+  hideMsg("search-msg");
+  const res = await fetch(API + "/rooms");
+  const rooms = await res.json();
+  allRooms = rooms;
+  renderRooms(rooms, "rooms-list");
+  fillRoomSelect(rooms);
+}
+
+async function searchRooms() {
+  const start = document.getElementById("search-start").value;
+  const end = document.getElementById("search-end").value;
+  const capacity = document.getElementById("search-capacity").value;
+
+  if (!start || !end) {
+    showAllRooms();
+    return;
+  }
+  if (new Date(end) <= new Date(start)) {
+    showMsg("search-msg", "Время окончания должно быть позже времени начала.", false);
+    return;
+  }
+  hideMsg("search-msg");
+
+  const params = new URLSearchParams({ start, end });
+  if (capacity) params.set("capacity", capacity);
+
+  const res = await fetch(API + "/rooms/available?" + params.toString());
+  if (!res.ok) {
+    showMsg("search-msg", "Не получилось выполнить поиск. Проверьте даты.", false);
+    return;
+  }
+  const rooms = await res.json();
+  allRooms = rooms;
+  renderRooms(rooms, "rooms-list");
+  fillRoomSelect(rooms);
+
+  // подставим выбранные даты в форму бронирования
+  document.getElementById("b-start").value = start;
+  document.getElementById("b-end").value = end;
+}
+
+async function createRoom() {
+  if (!token) {
+    showMsg("room-msg", "Сначала войдите в аккаунт (шаг 1) — создавать пространства могут только авторизованные пользователи.", false);
+    return;
+  }
+  const name = document.getElementById("room-name").value.trim();
+  const capacity = Number(document.getElementById("room-capacity").value);
+  const equipmentRaw = document.getElementById("room-equipment").value.trim();
+  const equipment = equipmentRaw ? equipmentRaw.split(",").map(s => s.trim()).filter(Boolean) : [];
+
+  if (!name || !capacity) {
+    showMsg("room-msg", "Укажите название и вместимость.", false);
+    return;
+  }
+
+  const res = await fetch(API + "/rooms", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+    body: JSON.stringify({ name, capacity, equipment })
+  });
+  if (res.ok) {
+    showMsg("room-msg", "Пространство создано!", true);
+    document.getElementById("room-name").value = "";
+    document.getElementById("room-capacity").value = "";
+    document.getElementById("room-equipment").value = "";
+    showAllRooms();
+  } else {
+    const data = await res.json().catch(() => ({}));
+    showMsg("room-msg", data.detail || "Не получилось создать пространство.", false);
+  }
+}
+
+// ---------- Бронирование ----------
+
+async function createBooking() {
+  if (!token) {
+    showMsg("booking-msg", "Сначала войдите в аккаунт (шаг 1).", false);
+    return;
+  }
+  const roomId = Number(document.getElementById("b-room").value);
+  const start = document.getElementById("b-start").value;
+  const end = document.getElementById("b-end").value;
+  const username = document.getElementById("b-username").value.trim();
+
+  if (!roomId) {
+    showMsg("booking-msg", "Сначала найдите и выберите пространство (шаг 2).", false);
+    return;
+  }
+  if (!start || !end) {
+    showMsg("booking-msg", "Укажите дату и время начала и окончания.", false);
+    return;
+  }
+  if (new Date(end) <= new Date(start)) {
+    showMsg("booking-msg", "Время окончания должно быть позже времени начала.", false);
+    return;
+  }
+  if (!username) {
+    showMsg("booking-msg", "Укажите имя для брони.", false);
+    return;
+  }
+
+  const res = await fetch(API + "/bookings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+    body: JSON.stringify({ room_id: roomId, start_time: start, end_time: end, username })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.ok) {
+    showMsg("booking-msg", "Забронировано! Пространство ваше на выбранное время.", true);
+    loadMyBookings();
+    searchRooms();
+  } else if (res.status === 409) {
+    showMsg("booking-msg", "Это пространство уже занято на выбранное время. Попробуйте другое время или другое пространство.", false);
+  } else {
+    showMsg("booking-msg", data.detail || "Не получилось создать бронь.", false);
+  }
+}
+
+function formatDateTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+async function loadMyBookings() {
+  if (!token) return;
+  const res = await fetch(API + "/bookings/mine", { headers: { "Authorization": "Bearer " + token } });
+  const container = document.getElementById("my-bookings");
+  if (!res.ok) {
+    container.innerHTML = '<p class="empty">Не удалось загрузить брони.</p>';
+    return;
+  }
+  const bookings = await res.json();
+  if (!bookings.length) {
+    container.innerHTML = '<p class="empty">У вас пока нет бронирований.</p>';
+    return;
+  }
+  const roomsById = {};
+  allRooms.forEach(r => roomsById[r.id] = r.name);
+  // если список комнат ещё не загружен — подгрузим для отображения имён
+  if (!allRooms.length) {
+    const r = await fetch(API + "/rooms");
+    const rooms = await r.json();
+    allRooms = rooms;
+    rooms.forEach(rr => roomsById[rr.id] = rr.name);
+  }
+
+  container.innerHTML = bookings
+    .sort((a, b) => new Date(b.start_time) - new Date(a.start_time))
+    .map(b => `
+      <div class="booking-row">
+        <div class="info">
+          <b>${roomsById[b.room_id] || "Пространство #" + b.room_id}</b>
+          <div class="meta">${formatDateTime(b.start_time)} — ${formatDateTime(b.end_time)}</div>
+          <div class="${b.status === 'active' ? 'status-active' : 'status-cancelled'}">${b.status === 'active' ? 'Активна' : 'Отменена'}</div>
+        </div>
+        ${b.status === 'active' ? `<button class="danger" onclick="cancelBooking(${b.id})">Отменить</button>` : ""}
+      </div>
+    `).join("");
+}
+
+async function cancelBooking(id) {
+  if (!confirm("Отменить это бронирование?")) return;
+  const res = await fetch(API + "/bookings/" + id, {
+    method: "DELETE",
+    headers: { "Authorization": "Bearer " + token }
+  });
+  if (res.ok) {
+    loadMyBookings();
+    searchRooms();
+  } else {
+    alert("Не удалось отменить бронирование.");
+  }
+}
+
+// ---------- Инициализация ----------
+
+function setDefaultSearchTimes() {
+  const now = new Date();
+  now.setMinutes(0, 0, 0);
+  now.setHours(now.getHours() + 1);
+  const later = new Date(now.getTime() + 60 * 60 * 1000);
+  const fmt = (d) => d.toISOString().slice(0, 16);
+  document.getElementById("search-start").value = fmt(now);
+  document.getElementById("search-end").value = fmt(later);
+}
+
+switchTab("login");
+setDefaultSearchTimes();
+updateAccountUI();
+showAllRooms();
+</script>
+
+</body>
+</html>
