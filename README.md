@@ -209,9 +209,9 @@ requirements.txt
 
 ## Схема данных
 
-**Room** — `id, name, capacity, equipment[]`
-**Booking** — `id, room_id, start_time, end_time, username, status (active|cancelled), owner_id`
-**User** — `id, username, password_hash`
+**Room** - `id, name, capacity, equipment[]`
+**Booking** - `id, room_id, start_time, end_time, username, status (active|cancelled), owner_id`
+**User** - `id, username, password_hash`
 
 ## HTTP-статусы
 
